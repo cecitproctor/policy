@@ -1,4 +1,13 @@
-
+/**
+ * CEBU EASTERN COLLEGE - POLICY AGREEMENT FORM
+ * TypeScript Application Logic (Compiled to JavaScript)
+ * 
+ * Features:
+ * - Form validation
+ * - Google Sheets integration via Apps Script
+ * - Local storage of submissions
+ * - Error handling and user feedback
+ */
 
 class PolicyAgreementForm {
   constructor() {
@@ -49,6 +58,12 @@ class PolicyAgreementForm {
           this.saveFormDataLocally();
         }, 100);
       });
+    }
+
+    // Print button in modal
+    const printBtn = document.getElementById("printBtn");
+    if (printBtn) {
+      printBtn.addEventListener("click", () => this.printModal());
     }
   }
 
@@ -164,8 +179,37 @@ class PolicyAgreementForm {
       studentId: document.getElementById("studentId").value,
       section: document.getElementById("section").value,
       email: document.getElementById("email").value,
+      course: document.getElementById("course").value,
+      contactInfo: document.getElementById("contactInfo").value,
       agreed: finalCheckbox ? finalCheckbox.checked : false,
+      sections: this.collectPolicySections(),
     };
+  }
+
+  /**
+   * Collect all policy sections text
+   */
+  collectPolicySections() {
+    const sections = {};
+    
+    // Get all policy section titles and content
+    const sectionElements = document.querySelectorAll('.policy-section');
+    
+    sectionElements.forEach((element, index) => {
+      const numberElement = element.querySelector('.section-number');
+      const contentElement = element.querySelector('.section-content');
+      
+      if (numberElement && contentElement) {
+        const sectionTitle = numberElement.textContent.trim();
+        const sectionContent = contentElement.textContent.trim();
+        sections[`section_${index + 1}`] = {
+          title: sectionTitle,
+          content: sectionContent
+        };
+      }
+    });
+    
+    return sections;
   }
 
   /**
@@ -355,6 +399,11 @@ class PolicyAgreementForm {
       studentIdElement.textContent = formData.studentId;
     }
 
+    const yearElement = document.getElementById("submissionYear");
+    if (yearElement && formData.year) {
+      yearElement.textContent = formData.year;
+    }
+
     const sectionElement = document.getElementById("submissionSection");
     if (sectionElement && formData.section) {
       sectionElement.textContent = formData.section;
@@ -365,6 +414,16 @@ class PolicyAgreementForm {
       emailElement.textContent = formData.email;
     }
 
+    const courseElement = document.getElementById("submissionCourse");
+    if (courseElement && formData.course) {
+      courseElement.textContent = formData.course;
+    }
+
+    const contactElement = document.getElementById("submissionContact");
+    if (contactElement && formData.contactInfo) {
+      contactElement.textContent = formData.contactInfo;
+    }
+
     const timestampElement = document.getElementById("submissionTimestamp");
     if (timestampElement) {
       const now = new Date();
@@ -372,7 +431,47 @@ class PolicyAgreementForm {
       timestampElement.textContent = timestamp;
     }
 
+    // Update policy sections (left column - titles only)
+    const sectionsContainer = document.getElementById("submissionSectionsList");
+    if (sectionsContainer && formData.sections) {
+      this.populatePolicySections(sectionsContainer, formData.sections);
+    }
+
     this.submissionModal.show();
+  }
+
+  /**
+   * Populate policy sections in modal (Left column - titles only)
+   */
+  populatePolicySections(container, sections) {
+    container.innerHTML = ''; // Clear existing content
+    
+    const sectionNames = {
+      section_1: 'I. General Conduct',
+      section_2: 'II. Laboratory Rules & Regulations',
+      section_3: 'III. Classroom Rules & Conduct',
+      section_4: 'IV. Data Management & Academic Integrity',
+      section_5: 'V. Attendance & Punctuality',
+      section_6: 'VI. Device Policies & Restrictions',
+      section_7: 'VII. Consequences of Violations',
+      section_8: 'VIII. Acknowledgement & Liability',
+      section_9: 'IX. Agreement & Acknowledgement'
+    };
+
+    Object.entries(sections).forEach(([key, section]) => {
+      const sectionDiv = document.createElement('div');
+      sectionDiv.className = 'section-title-item';
+      
+      const title = sectionNames[key] || section.title || key;
+      
+      sectionDiv.innerHTML = `
+        <div class="section-number-title">
+          <strong>${title}</strong>
+        </div>
+      `;
+      
+      container.appendChild(sectionDiv);
+    });
   }
 
   /**
@@ -417,19 +516,179 @@ class PolicyAgreementForm {
   }
 
   /**
-   * Get current form data (useful for debugging)
+   * Print the submission modal
    */
-  getFormData() {
-    return this.collectFormData();
-  }
+  printModal() {
+    const modalContent = document.querySelector('#submissionModal .modal-body');
+    if (!modalContent) return;
 
-  /**
-   * Clear all form data and local storage
-   */
-  clearAllData() {
-    this.formElement.reset();
-    localStorage.removeItem("policyFormData");
-    this.formElement.classList.remove("was-validated");
+    // Create print window
+    const printWindow = window.open('', '', 'height=700,width=900');
+    const printDocument = printWindow.document;
+
+    // Write HTML for printing
+    printDocument.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Policy Agreement Submission - Cebu Eastern College</title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+        <style>
+          body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 20px;
+            color: #212529;
+          }
+          .header {
+            text-align: center;
+            border-bottom: 3px solid #0056b3;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+          }
+          .header h2 {
+            color: #0056b3;
+            margin-bottom: 5px;
+          }
+          .header p {
+            margin: 0;
+            color: #666;
+            font-size: 0.95rem;
+          }
+          .section {
+            margin-bottom: 25px;
+            page-break-inside: avoid;
+          }
+          .section-title {
+            color: #0056b3;
+            font-size: 1.1rem;
+            font-weight: 700;
+            border-left: 4px solid #0056b3;
+            padding-left: 10px;
+            margin-bottom: 12px;
+          }
+          .details-table {
+            width: 100%;
+            margin-bottom: 15px;
+          }
+          .details-table .detail-row {
+            display: flex;
+            padding: 8px 0;
+            border-bottom: 1px solid #ddd;
+          }
+          .details-table .detail-label {
+            font-weight: 600;
+            width: 30%;
+            color: #333;
+          }
+          .details-table .detail-value {
+            width: 70%;
+            word-break: break-word;
+            color: #666;
+          }
+          .policy-sections-list {
+            margin-top: 15px;
+          }
+          .policy-section-display {
+            background: #f8f9fa;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-left: 3px solid #0056b3;
+            page-break-inside: avoid;
+          }
+          .section-header-display {
+            font-weight: 600;
+            color: #0056b3;
+            margin-bottom: 5px;
+          }
+          .section-content-display {
+            font-size: 0.9rem;
+            color: #666;
+            line-height: 1.5;
+          }
+          .footer {
+            margin-top: 30px;
+            padding-top: 15px;
+            border-top: 2px solid #0056b3;
+            text-align: center;
+            color: #666;
+            font-size: 0.9rem;
+          }
+          @media print {
+            body { margin: 0; padding: 10px; }
+            .no-print { display: none; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h2><i class="fas fa-check-circle"></i> Submission Confirmation</h2>
+          <p>Cebu Eastern College, Inc. - College of Information Technology</p>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Personal Information</div>
+          <div class="details-table">
+            <div class="detail-row">
+              <span class="detail-label">Reference ID:</span>
+              <span class="detail-value">${document.getElementById('referenceId').textContent}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Student Name:</span>
+              <span class="detail-value">${document.getElementById('submissionStudentName').textContent}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Student ID:</span>
+              <span class="detail-value">${document.getElementById('submissionStudentId').textContent}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Year Level:</span>
+              <span class="detail-value">${document.getElementById('submissionYear').textContent}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Section:</span>
+              <span class="detail-value">${document.getElementById('submissionSection').textContent}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Course:</span>
+              <span class="detail-value">${document.getElementById('submissionCourse').textContent}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Email:</span>
+              <span class="detail-value">${document.getElementById('submissionEmail').textContent}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Contact Information:</span>
+              <span class="detail-value">${document.getElementById('submissionContact').textContent}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Submission Date/Time:</span>
+              <span class="detail-value">${document.getElementById('submissionTimestamp').textContent}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Sections Agreed To</div>
+          <div class="policy-sections-list">
+            ${document.getElementById('submissionPolicySections').innerHTML}
+          </div>
+        </div>
+
+        <div class="footer">
+          <p>This document serves as your submission confirmation. Please keep it for your records.</p>
+          <p>Printed on: ${new Date().toLocaleString()}</p>
+        </div>
+      </body>
+      </html>
+    `);
+
+    printDocument.close();
+
+    // Print after content loads
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 250);
   }
 }
 
@@ -438,7 +697,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const form = new PolicyAgreementForm();
 
   // Configuration: Set your Google Apps Script URL here
-  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbycF-w8E_ehhITfpRxdvxT4ZJLX-lWwSoVK4hdS-oeg0aHs-RxGzbhzwkyqN5WQczIS/exec";
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzNs8UwDirv9AjR3_p_gcl2wv02bqiUPJ-uZg3GDEindO3wLpy3REp8kRtyiwCIPpYs/exec";
   form.setAppsScriptUrl(APPS_SCRIPT_URL);
 
   // Make form instance available globally
